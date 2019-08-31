@@ -1,0 +1,155 @@
+IMPLEMENTATION
+	Minefield_I
+REFINES
+	Minefield
+CONCRETE_VARIABLES
+	sizeX, sizeY, FIELD
+VALUES
+	MINE = -2;
+	NONE = -1;
+	TOTAL = 449
+INITIALISATION
+	sizeX := 30;
+	sizeY := 15;
+	VAR ii, mm IN
+		ii := 0;
+		mm := sizeX * sizeY;
+		WHILE ii < mm DO
+			FIELD(ii) := NONE;
+			ii := ii + 1
+		INVARIANT mm + 1 > ii
+		VARIANT mm + 1 - ii
+		END
+	END;
+	FIELD(2) := MINE;
+	FIELD(9) := MINE
+OPERATIONS
+	rr <-- select(xx, yy) =
+		VAR ii, jj, kk, ll, llMax, kkMax, count, ray, rayX, rayY, rayXp, rayYp, fim, ct, ex, maxT, aux, aux2 IN
+			maxT := TOTAL * 3;
+			fim := 0;
+			ct := 0;
+			ex := 0;
+			ray := 0;
+			count := 0;
+			kk := 0;
+			kkMax := 0;
+			ll := 0;
+			llMax := 0;
+			aux2 := 0;
+			rayX := xx;
+			rayY := yy;
+			rayXp := xx;
+			rayYp := yy;
+			ii := xx;
+			jj := yy;
+			aux := FIELD(xx + sizeX * yy);
+			IF aux = MINE THEN
+				rr := KILLED
+			ELSE
+				IF aux = NONE THEN
+					WHILE fim = 0 & maxT > ct DO
+						aux := FIELD(ii + sizeX * jj);
+						IF ray = 0 or aux /= NONE THEN
+							count := 0
+						ELSE
+							count := 1;
+							IF ii > 0 THEN kk := ii - 1 ELSE kk := 0 END;
+							IF jj > 0 THEN ll := jj - 1 ELSE ll := 0 END;
+							aux2 := sizeX - 1;
+							IF ii < aux2 THEN kkMax := ii + 2 ELSE kkMax := sizeX END;
+							aux2 := sizeY - 1;
+							IF jj < aux2 THEN llMax := jj + 2 ELSE llMax := sizeY END;
+							WHILE kk < kkMax DO
+								WHILE ll < llMax DO
+									aux2 := FIELD(kk + sizeX * ll);
+									IF aux2 = 0 THEN count := 0 END;
+									ll := ll + 1
+								INVARIANT llMax + 1 > ll
+								VARIANT llMax + 1 - ll
+								END;
+								IF jj > 0 THEN ll := jj - 1 ELSE ll := 0 END;
+								kk := kk + 1
+							INVARIANT kkMax + 1 > kk
+							VARIANT kkMax + 1 - kk
+							END
+						END;
+						IF count = 0 & aux = NONE THEN
+							IF ii > 0 THEN kk := ii - 1 ELSE kk := 0 END;
+							IF jj > 0 THEN ll := jj - 1 ELSE ll := 0 END;
+							aux2 := sizeX - 1;
+							IF ii < aux2 THEN kkMax := ii + 2 ELSE kkMax := sizeX END;
+							aux2 := sizeY - 1;
+							IF jj < aux2 THEN llMax := jj + 2 ELSE llMax := sizeY END;
+							WHILE kk < kkMax DO
+								WHILE ll < llMax DO
+									aux2 := FIELD(kk + sizeX * ll);
+									IF aux2 = MINE THEN count := count + 1 END;
+									ll := ll + 1
+								INVARIANT llMax + 1 > ll
+								VARIANT llMax + 1 - ll
+								END;
+								IF jj > 0 THEN ll := jj - 1 ELSE ll := 0 END;
+								kk := kk + 1
+							INVARIANT kkMax + 1 > kk
+							VARIANT kkMax + 1 - kk
+							END;
+							FIELD(ii + sizeX * jj) := count;
+							IF count = 0 THEN
+								ex := 1
+							END
+						END;
+						IF ii = rayX & jj = rayY & ex = 0 THEN
+							fim := 1
+						ELSE
+							IF ii = rayX & jj = rayY & ex = 1 THEN
+								ray := ray + 1;
+								ex := 0;
+								rayX := xx - ray;
+								rayY := yy - ray;
+								rayXp := xx + ray;
+								rayYp := yy + ray;
+								IF rayX < 0 THEN rayX := 0 END;
+								IF rayY < 0 THEN rayY := 0 END;
+								IF rayXp >= sizeX THEN rayXp := sizeX-1 END;
+								IF rayYp >= sizeY THEN rayYp := sizeY-1 END;
+								ii := rayX;
+								jj := rayY
+							END;
+							aux := 0;
+							IF jj = rayY & ii /= rayXp THEN aux := 1; ii := ii + 1 END;
+							IF aux = 0 & ii = rayXp & jj /= rayYp THEN aux := 1; jj := jj + 1 END;
+							IF aux = 0 & jj = rayYp & ii /= rayX THEN aux := 1; ii := ii - 1 END;
+							IF aux = 0 & ii = rayX & jj /= rayY THEN jj := jj - 1 END
+						END;
+						ct := ct + 1
+					INVARIANT maxT > ct
+					VARIANT maxT - ct
+					END
+				END;
+				rr := OK
+			END
+		END;
+	rr <-- isWinner =
+		VAR ii, len, aux IN
+			ii := 0;
+			len := sizeX*sizeY-1;
+			aux := FIELD(ii);
+			IF aux = NONE THEN
+				rr := ERROR
+			ELSE
+				rr := OK
+			END;
+			WHILE ii < len DO
+				ii := ii + 1;
+				aux := FIELD(ii);
+				IF aux = NONE THEN
+					rr := ERROR
+				END
+			INVARIANT sizeX*sizeY > ii & ii : 0..len & FIELD(ii) = NONE => rr = ERROR
+			VARIANT sizeX*sizeY - ii
+			END
+		END;
+	initField(ff) =
+		FIELD := ff
+END
